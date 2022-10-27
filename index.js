@@ -1,7 +1,11 @@
 import inquirer from 'inquirer';
 import chalk from "chalk";
 
+import fs from 'fs';
+
+
 const showErrorMessage = (message) => console.log(chalk.red(`\n${message}`));
+
 
 const cpfValidation = (input) => {
     if (input.length == 0) {
@@ -17,14 +21,17 @@ const cpfValidation = (input) => {
     }
 };
 
-
-const deposit_values = [
+const balance_values = [
     {
         message: "Informe seu CPF: ",
-        name: "cpf_verification",
+        name: "cpf",
         type: "input",
         validate: (input) => cpfValidation(input)
     },
+];
+
+const deposit_values = [
+    ...balance_values,
     {
         message: "Informe o valor: ",
         name: "deposit_value",
@@ -32,6 +39,8 @@ const deposit_values = [
         validate: (input) => {
             if (input.length == 0) {
               showErrorMessage("Por favor, informe um valor válido.");
+            } if (parseFloat(input) < 0) {
+                showErrorMessage("Por favor, informe um valor positivo.");
             } else {
               return true;
             }
@@ -41,47 +50,82 @@ const deposit_values = [
 
 const account_values = [
     {
-      message: "Nome: ",
-      name: "name",
-      type: "input",
-      validate: (input) => {
-        if (input.length == 0) {
-          showErrorMessage("Por favor, informe seu nome completo.");
-        } else {
-          return true;
-        }
-      },
+        message: "Nome: ",
+        name: "name",
+        type: "input",
+        validate: (input) => {
+            if (input.length == 0) {
+                showErrorMessage("Por favor, informe seu nome completo.");
+            } else {
+                return true;
+            }
+        },
     },
     {
         message: "CPF: ",
         name: "cpf",
-        type: "input",
+        type: "number",
         validate: (input) => cpfValidation(input),
     }
 ];
 
-const createAccount = () => {
-// Math.round();
-}
+// const createAccount = (values) => 
 
 
 const routes = {
     "Criar Conta": () => {
-        inquirer_(account_values, (answers) => createAccount(answers));
+        inquirer_(account_values, (answers) => {
+            fs.readFile('accounts.json', "utf8", (err, data) => {
+                if(err) {
+                    showErrorMessage("Não foi possível verificar contas.");
+                    return false;
+                }
+
+                const accounts = JSON.parse(data);
+                const userExists = accounts.filter(acc => answers.cpf == acc.cpf).length > 0;
+
+                if(userExists) {
+                    showErrorMessage("Este CPF já está vinculado a uma conta!");
+                    return false;
+                }
+        
+                const userAccount = [
+                    {
+                        "name": answers.name,
+                        "cpf": answers.cpf,
+                        "account": answers.name,
+                        "balance": 0.0
+                    },
+                    ...accounts
+                ]
+                fs.writeFileSync('accounts.json', JSON.stringify(userAccount));
+            });
+        });
     },
     "Depositar": () => {
         inquirer_(deposit_values, (answers) => {
-            console.log(answers);
-            // createAccount(answers);
-        });
+            fs.readFile('accounts.json', "utf8", (err, data) => {
+                if(err) {
+                    showErrorMessage("Não foi possível verificar contas.");
+                    return;
+                }
 
+                const accounts = JSON.parse(data);
+                const userExists = accounts.filter(acc => answers.cpf == acc.cpf).length > 0;
+
+                if(userExists) console.log("Usuário encontrado");
+            });
+        });
     },
     "Saldo": () => {
-        console.log("Consultar saldo");
-    
+        inquirer_(balance_values, (answers) => {
+            console.log(answers);
+        });
     },
     "Sacar": () => {
-        console.log("Sacar");
+        inquirer_(balance_values, (answers) => {
+            console.log(answers);
+        });
     },
     "Sair": () => {
         console.log("Sair");
@@ -114,10 +158,11 @@ function inquirer_(choices, _function) {
         if (error.isTtyError) {
             showErrorMessage("Desculpe! Houve um erro ao acessar o console.");
         } else {
+            console.log(error);
             showErrorMessage("Desculpe! Não foi possível validar seus dados.");
         }
     });
 }
 
 
-inquirer_(menu_choices, (answers) => routes[answers.menu_choices]())
+inquirer_(menu_choices, (answers) => routes[answers.menu_choices]());
