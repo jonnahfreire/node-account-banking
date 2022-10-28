@@ -1,61 +1,65 @@
 import inquirer from 'inquirer';
 import chalk from "chalk";
+import MD5 from "crypto-js/md5.js";
 
 import fs from 'fs';
 
 
 const showErrorMessage = (message) => console.log(chalk.red(`\n${message}`));
-
+const showWarningMessage = (message) => console.log(chalk.yellowBright(`\n${message}`));
+const showSuccessMessage = (message) => console.log(chalk.greenBright(`\n${message}`));
 
 const cpfValidation = (input) => {
     if (input.length == 0) {
-      showErrorMessage("Por favor, informe um CPF.");
+        showErrorMessage("Por favor, informe um CPF.");
     } else if (RegExp(/\D/g).test(input)) {
-      showErrorMessage(
-        "Insira apenas números."
-      );
+        showErrorMessage(
+            "Insira apenas números."
+            );
     } else if (input.length < 11 || input.length > 11) {
-      showErrorMessage("Digite um CPF válido.");
+        showErrorMessage("Digite um CPF válido.");
     } else {
-      return true;
+        return true;
     }
 };
 
-const balance_values = [
+const depositInputs = [
     {
-        message: "Informe seu CPF: ",
-        name: "cpf",
+        message: "Informe o número da conta em que deseja depositar: ",
+        name: "account",
         type: "input",
-        validate: (input) => cpfValidation(input)
+        validate: (value) => {
+            if(value.includes("-")) value = value.replace("-", "");
+            if (RegExp(/\D/g).test(value)) {
+                showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
+            } else return true;
+        },
     },
-];
-
-const deposit_values = [
-    ...balance_values,
     {
         message: "Informe o valor: ",
-        name: "deposit_value",
+        name: "deposit",
         type: "input",
         validate: (input) => {
             if (input.length == 0) {
               showErrorMessage("Por favor, informe um valor válido.");
-            } if (parseFloat(input) < 0) {
+
+            }  if (parseFloat(input) < 0) {
                 showErrorMessage("Por favor, informe um valor positivo.");
-            } else {
-              return true;
-            }
-          },
+            
+            } else return true;
+        },
     }
 ];
 
-const account_values = [
+const accountInputs = [
     {
         message: "Nome: ",
         name: "name",
         type: "input",
-        validate: (input) => {
-            if (input.length == 0) {
+        validate: (values) => {
+            if (values.length == 0) {
                 showErrorMessage("Por favor, informe seu nome completo.");
+                return false;
             } else {
                 return true;
             }
@@ -64,66 +68,136 @@ const account_values = [
     {
         message: "CPF: ",
         name: "cpf",
-        type: "number",
-        validate: (input) => cpfValidation(input),
+        type: "input",
+        validate: (values) => cpfValidation(values),
+    }, 
+    {
+        message: "Crie um senha de 4 digitos",
+        name: "password",
+        type: "password",
+        validate: (value) => {
+            if(value.length < 4) {
+                showErrorMessage("Insira uma senha numérica de 4 digitos: ");
+            } else if (RegExp(/\D/g).test(value)) {
+                showErrorMessage("Insira apenas números.");
+
+            } else return true;
+        }
     }
 ];
 
-// const createAccount = (values) => 
+const balanceInputs = [
+    depositInputs[0],
+    {
+        message: "Informe sua senha de 4 digitos",
+        name: "password",
+        type: "password",
+        validate: (value) => {
+            if(value.length < 4) {
+                showErrorMessage("Insira uma senha numérica de 4 digitos: ");
+            } else if (RegExp(/\D/g).test(value)) {
+                showErrorMessage("Insira apenas números.");
 
+            } else return true;
+        }
+    }
+]
+
+const withDrawInputs = [
+    depositInputs[0],
+    balanceInputs[1]
+]
+
+function getAccountList() {
+    const data =  fs.readFileSync('accounts.json', "utf8");
+    return data.length > 0 ? JSON.parse(data) : [];
+}
+
+function filterAccountBy(value, field) {
+    if(field == "account") return getAccountList()
+        .filter(acc => value == acc[field]["number"]);
+    return getAccountList().filter(acc => value == acc[field]);
+}
+
+
+function createAccount(values) {
+    function generateAccountNumber() {
+        const digit = Math.round(Math.random() * 10);
+        const number = Math.round(Math.random() * 999 * 999 * 999);
+        return `${number}-${digit}`;
+    }
+
+    showWarningMessage("Verificando contas...");
+
+    if(filterAccountBy(values.cpf, "cpf").length > 0) {
+        showErrorMessage("Este CPF já está vinculado a uma conta!");
+        return false;
+    }
+
+    const userAccount = [
+        {
+            "owner": values.name,
+            "cpf": values.cpf,
+            "password": MD5(values.password).toString(),
+            "account": {
+                "number": generateAccountNumber(),
+                "balance": 0.0
+            }
+        },
+        ...getAccountList()
+    ]
+
+    fs.writeFileSync('accounts.json', JSON.stringify(userAccount));
+
+    showSuccessMessage("Conta criada com sucesso! :D");
+    let accountInfo = `Nº: ${userAccount[0].account.number}\n`;
+    accountInfo += `Saldo: ${userAccount[0].account.balance.toFixed(2)}\n` 
+    showSuccessMessage(accountInfo);
+
+    return true;
+}
+
+function deposit(values) {
+    if(filterAccountBy(values.account, "account").length > 0) {
+
+        const accounts = getAccountList().map(acc => {
+            if(acc.account.number == values.account) {
+                acc.account.balance = parseFloat(values.deposit);
+            }
+        
+            return acc;
+        });
+    
+        fs.writeFileSync('accounts.json', JSON.stringify(accounts));
+        showSuccessMessage("Depósito realizado com sucesso! :D");
+
+        return true;
+    } else {
+        showErrorMessage("Conta não encontrada! Verifique e tente novamente.");
+        return false;
+    }
+}
 
 const routes = {
     "Criar Conta": () => {
-        inquirer_(account_values, (answers) => {
-            fs.readFile('accounts.json', "utf8", (err, data) => {
-                if(err) {
-                    showErrorMessage("Não foi possível verificar contas.");
-                    return false;
-                }
-
-                const accounts = JSON.parse(data);
-                const userExists = accounts.filter(acc => answers.cpf == acc.cpf).length > 0;
-
-                if(userExists) {
-                    showErrorMessage("Este CPF já está vinculado a uma conta!");
-                    return false;
-                }
-        
-                const userAccount = [
-                    {
-                        "name": answers.name,
-                        "cpf": answers.cpf,
-                        "account": answers.name,
-                        "balance": 0.0
-                    },
-                    ...accounts
-                ]
-                fs.writeFileSync('accounts.json', JSON.stringify(userAccount));
-            });
+        inquirer_(accountInputs, (answers) => {
+            createAccount(answers);
+            main();
         });
     },
     "Depositar": () => {
-        inquirer_(deposit_values, (answers) => {
-            fs.readFile('accounts.json', "utf8", (err, data) => {
-                if(err) {
-                    showErrorMessage("Não foi possível verificar contas.");
-                    return;
-                }
-
-                const accounts = JSON.parse(data);
-                const userExists = accounts.filter(acc => answers.cpf == acc.cpf).length > 0;
-
-                if(userExists) console.log("Usuário encontrado");
-            });
+        inquirer_(depositInputs, (answers) => {
+            deposit(answers);
+            main();
         });
     },
     "Saldo": () => {
-        inquirer_(balance_values, (answers) => {
+        inquirer_(balanceInputs, (answers) => {
             console.log(answers);
         });
     },
     "Sacar": () => {
-        inquirer_(balance_values, (answers) => {
+        inquirer_(withDrawInputs, (answers) => {
             console.log(answers);
         });
     },
@@ -133,10 +207,10 @@ const routes = {
 }
 
 
-const menu_choices = [
+const menuChoices = [
     {
       message: "Selecione uma opção abaixo: ",
-      name: "menu_choices",
+      name: "menuChoices",
       type: "list",
       choices: Object.keys(routes),
       validate: (input) => {
@@ -148,7 +222,6 @@ const menu_choices = [
       },
     },
 ];
-
 
 function inquirer_(choices, _function) {
     inquirer
@@ -164,5 +237,8 @@ function inquirer_(choices, _function) {
     });
 }
 
+function main() {
+    inquirer_(menuChoices, (answers) => routes[answers.menuChoices]());
+}
 
-inquirer_(menu_choices, (answers) => routes[answers.menu_choices]());
+main();
