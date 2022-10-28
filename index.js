@@ -109,8 +109,8 @@ const withDrawInputs = [
 ]
 
 function getAccountList() {
-    const data =  fs.readFileSync('accounts.json', "utf8");
-    return data.length > 0 ? JSON.parse(data) : [];
+    const accounts =  fs.readFileSync('accounts.json', "utf8");
+    return accounts.length > 0 ? JSON.parse(accounts) : [];
 }
 
 function filterAccountBy(value, field) {
@@ -118,7 +118,6 @@ function filterAccountBy(value, field) {
         .filter(acc => value == acc[field]["number"]);
     return getAccountList().filter(acc => value == acc[field]);
 }
-
 
 function createAccount(values) {
     function generateAccountNumber() {
@@ -173,7 +172,7 @@ function deposit(values) {
 
         return true;
     } else {
-        showErrorMessage("Conta não encontrada! Verifique e tente novamente.");
+        showWarningMessage("Conta não encontrada! Verifique e tente novamente.");
         return false;
     }
 }
