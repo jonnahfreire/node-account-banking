@@ -89,12 +89,12 @@ const accountInputs = [
 const balanceInputs = [
     depositInputs[0],
     {
-        message: "Informe sua senha de 4 digitos",
+        message: "Informe sua senha de 4 digitos: ",
         name: "password",
         type: "password",
         validate: (value) => {
             if(value.length < 4) {
-                showErrorMessage("Insira uma senha numérica de 4 digitos: ");
+                showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
 
