@@ -10,17 +10,10 @@ const showWarningMessage = (message) => console.log(chalk.yellowBright(`\n${mess
 const showSuccessMessage = (message) => console.log(chalk.greenBright(`\n${message}`));
 
 const cpfValidation = (input) => {
-    if (input.length == 0) {
-        showErrorMessage("Por favor, informe um CPF.");
-    } else if (RegExp(/\D/g).test(input)) {
-        showErrorMessage(
-            "Insira apenas números."
-            );
-    } else if (input.length < 11 || input.length > 11) {
-        showErrorMessage("Digite um CPF válido.");
-    } else {
-        return true;
-    }
+    if (input.length == 0) showErrorMessage("Por favor, informe um CPF.");
+    else if (RegExp(/\D/g).test(input)) showErrorMessage("Insira apenas números.");
+    else if (input.length < 11 || input.length > 11) showErrorMessage("Digite um CPF válido.");
+    else return true;
 };
 
 const depositInputs = [
@@ -87,7 +80,6 @@ const accountInputs = [
 ];
 
 const balanceInputs = [
-    depositInputs[0],
     {
         message: "Informe sua senha de 4 digitos: ",
         name: "password",
@@ -104,8 +96,7 @@ const balanceInputs = [
 ]
 
 const withDrawInputs = [
-    depositInputs[0],
-    balanceInputs[1]
+    balanceInputs[0]
 ]
 
 function getAccountList() {
