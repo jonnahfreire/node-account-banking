@@ -81,6 +81,17 @@ const accountInputs = [
 
 const balanceInputs = [
     {
+        message: "Informe o número da conta que deseja ver o saldo: ",
+        name: "account",
+        type: "input",
+        validate: (value) => {
+            if(value.includes("-")) value = value.replace("-", "");
+            if (RegExp(/\D/g).test(value)) {
+                showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
+            } else return true;
+        },
+    },
+    {
         message: "Informe sua senha de 4 digitos: ",
         name: "password",
         type: "password",
@@ -168,6 +179,24 @@ function deposit(values) {
     }
 }
 
+function balance(values) {
+    if(filterAccountBy(values.account, "account").length > 0) {
+    
+        const accounts = JSON.parse(fs.readFileSync('accounts.json', 'utf8'));
+
+        accounts.forEach(element => {
+            if (element.account.number == values.account) {
+                showSuccessMessage(`Saldo: R$ ${element.account.balance}`);
+            }
+        });
+
+        return true;
+    } else {
+        showWarningMessage("Conta não encontrada! Verifique e tente novamente.");
+        return false;
+    }
+}
+
 const routes = {
     "Criar Conta": () => {
         inquirer_(accountInputs, (answers) => {
@@ -183,7 +212,7 @@ const routes = {
     },
     "Saldo": () => {
         inquirer_(balanceInputs, (answers) => {
-            console.log(answers);
+            balance(answers);
         });
     },
     "Sacar": () => {
