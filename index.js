@@ -35,10 +35,8 @@ const depositInputs = [
         validate: (input) => {
             if (input.length == 0) {
               showErrorMessage("Por favor, informe um valor válido.");
-
             }  if (parseFloat(input) < 0) {
                 showErrorMessage("Por favor, informe um valor positivo.");
-            
             } else return true;
         },
     }
@@ -73,7 +71,6 @@ const accountInputs = [
                 showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
-
             } else return true;
         }
     }
@@ -100,41 +97,53 @@ const balanceInputs = [
                 showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
-
+            } else if (MD5(value).toString() != getAccountList().map(acc => acc.password)){
+                showWarningMessage("Senha incorreta! Verifique e tente novamente.");
             } else return true;
         }
     }
 ]
 
-const withDrawInputs = [{
-    message: 'Informe o número da conta em que deseja sacar: ',
-    name: 'account',
-    type: 'input',
-    validate: (value) => {
-        if(value.includes("-")) value = value.replace("-", "");
-        if (RegExp(/\D/g).test(value)) {
-            showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
-        } else return true;
+const withDrawInputs = [
+    {
+        message: "Informe o número da conta que deseja sacar: ",
+        name: "account",
+        type: "input",
+        validate: (value) => {
+            if(value.includes("-")) value = value.replace("-", "");
+            if (RegExp(/\D/g).test(value)) {
+                showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
+            } else return true;
+        },
     },
-},
-{
-    message: 'Informe o valor: ',
-    name: 'withdraw',
-    type: 'input',
-    validate: (input) => {
-        if(input.length == 0){
-            showErrorMessage('Por favor, informe um valor válido.');
-        }  if(parseFloat(input) < 0 ){
-            showErrorMessage("Por favor, informe um valor positivo")
-
-        }  if(input.length < balance){
-            showErrorMessage('saldo insuficiente')
-
-        }  else return true;
+    {
+        message: "Informe sua senha de 4 digitos: ",
+        name: "password",
+        type: "password",
+        validate: (value) => {
+            if(value.length < 4) {
+                showErrorMessage("Insira uma senha numérica de 4 digitos");
+            } else if (RegExp(/\D/g).test(value)) {
+                showErrorMessage("Insira apenas números.");
+            } else if (MD5(value).toString() != getAccountList().map(acc => acc.password)){
+                showWarningMessage("Senha incorreta! Verifique e tente novamente.");
+            } else return true;
+        }
+    },
+    {
+        message: 'Informe o valor: ',
+        name: 'withdraw',
+        type: 'input',
+        validate: (input) => {
+            if(input.length == 0){
+                showErrorMessage('Por favor, informe um valor válido.');
+            } else if(parseFloat(input) < 0 ){
+                showErrorMessage("Por favor, informe um valor positivo.")
+            } else if(input > getAccountList().map(acc => acc.account.balance)){
+                showErrorMessage('Saldo insuficiente.')
+            }  else return true;
+        }
     }
-}
-    //balanceInputs[0]
-
 ]
 
 function getAccountList() {
@@ -190,7 +199,7 @@ function deposit(values) {
 
         const accounts = getAccountList().map(acc => {
             if(acc.account.number == values.account) {
-                acc.account.balance = parseFloat(values.deposit);
+                acc.account.balance += parseFloat(values.deposit);
             }
         
             return acc;
@@ -207,19 +216,23 @@ function deposit(values) {
 }
 function withdraw(values){
     if(filterAccountBy(values.account, "account").length > 0){
+
         const accounts = getAccountList().map(acc =>{
             if(acc.account.number == values.account){
                 acc.account.balance = parseFloat(acc.account.balance - values.withdraw);
             }
             return acc; 
         });
+
         fs.writeFileSync('accounts.json', JSON.stringify(accounts));
         showSuccessMessage("Saque realizado com sucesso! :D");
+
         accounts.forEach(element => {
             if(element.account.number == values.account){
                 showSuccessMessage(`Seu saldo atual é de: R$ ${element.account.balance}`);
             }
         })  
+
         return true;
     } else {
         showWarningMessage("Conta não encontrada! Verifique e tente novamente.");
@@ -228,8 +241,8 @@ function withdraw(values){
 }
 function balance(values) {
     if(filterAccountBy(values.account, "account").length > 0) {
-        const accounts = JSON.parse(fs.readFileSync('accounts.json', 'utf8'));
-        accounts.forEach(element => {
+        //const accounts = JSON.parse(fs.readFileSync('accounts.json', 'utf8'));
+        getAccountList().map(element => {
             if (element.account.number == values.account) {
                 showSuccessMessage(`Saldo atual: R$ ${element.account.balance}`);
             }
