@@ -241,7 +241,6 @@ function withdraw(values){
 }
 function balance(values) {
     if(filterAccountBy(values.account, "account").length > 0) {
-        //const accounts = JSON.parse(fs.readFileSync('accounts.json', 'utf8'));
         getAccountList().map(element => {
             if (element.account.number == values.account) {
                 showSuccessMessage(`Saldo atual: R$ ${element.account.balance}`);
