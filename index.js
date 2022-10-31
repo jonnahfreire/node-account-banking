@@ -35,10 +35,8 @@ const depositInputs = [
         validate: (input) => {
             if (input.length == 0) {
               showErrorMessage("Por favor, informe um valor válido.");
-
             }  if (parseFloat(input) < 0) {
                 showErrorMessage("Por favor, informe um valor positivo.");
-            
             } else return true;
         },
     }
@@ -73,7 +71,6 @@ const accountInputs = [
                 showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
-
             } else return true;
         }
     }
@@ -100,7 +97,8 @@ const balanceInputs = [
                 showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
-
+            } else if (MD5(value).toString() != getAccountList().map(acc => acc.password)){
+                showWarningMessage("Senha incorreta! Verifique e tente novamente.");
             } else return true;
         }
     }

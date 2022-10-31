@@ -14,5 +14,13 @@
     "crypto-js": "^4.1.1",
     "inquirer": "^9.1.4",
     "nodemon": "^2.0.20"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonnahfreire/node-banking-account.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jonnahfreire/node-banking-account/issues"
+  },
+  "homepage": "https://github.com/jonnahfreire/node-banking-account#readme"
 }
