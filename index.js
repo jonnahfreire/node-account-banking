@@ -97,7 +97,7 @@ const balanceInputs = [
                 showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
-            } else if (MD5(value).toString() != getAccountList().map(acc => acc.password)){
+            } else if (MD5(value).toString() != getAccountList().forEach(acc => acc.password)){
                 showWarningMessage("Senha incorreta! Verifique e tente novamente.");
             } else return true;
         }
@@ -125,7 +125,7 @@ const withDrawInputs = [
                 showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
-            } else if (MD5(value).toString() != getAccountList().map(acc => acc.password)){
+            } else if (MD5(value).toString() != getAccountList().forEach(acc => acc.password)){
                 showWarningMessage("Senha incorreta! Verifique e tente novamente.");
             } else return true;
         }
@@ -139,7 +139,7 @@ const withDrawInputs = [
                 showErrorMessage('Por favor, informe um valor válido.');
             } else if(parseFloat(input) < 0 ){
                 showErrorMessage("Por favor, informe um valor positivo.")
-            } else if(input > getAccountList().map(acc => acc.account.balance)){
+            } else if(getAccountList().forEach(acc => acc.account.balance) < input){
                 showErrorMessage('Saldo insuficiente.')
             }  else return true;
         }
