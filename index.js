@@ -216,10 +216,9 @@ function withdraw(values){
         fs.writeFileSync('accounts.json', JSON.stringify(accounts));
         showSuccessMessage("Saque realizado com sucesso! :D");
         accounts.forEach(element => {
-            if(element.account.number = values.account){
-                showSuccessMessage(`Seu saldo atual é de: R$ ${element.account.balance - element.account.withdraw}`);
+            if(element.account.number == values.account){
+                showSuccessMessage(`Seu saldo atual é de: R$ ${element.account.balance}`);
             }
-
         })  
         return true;
     } else {
