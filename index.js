@@ -106,8 +106,35 @@ const balanceInputs = [
     }
 ]
 
-const withDrawInputs = [
-    balanceInputs[0]
+const withDrawInputs = [{
+    message: 'Informe o número da conta em que deseja sacar: ',
+    name: 'account',
+    type: 'input',
+    validate: (value) => {
+        if(value.includes("-")) value = value.replace("-", "");
+        if (RegExp(/\D/g).test(value)) {
+            showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
+        } else return true;
+    },
+},
+{
+    message: 'Informe o valor: ',
+    name: 'withdraw',
+    type: 'input',
+    validate: (input) => {
+        if(input.length == 0){
+            showErrorMessage('Por favor, informe um valor válido.');
+        }  if(parseFloat(input) < 0 ){
+            showErrorMessage("Por favor, informe um valor positivo")
+
+        }  if(input.length < balance){
+            showErrorMessage('saldo insuficiente')
+
+        }  else return true;
+    }
+}
+    //balanceInputs[0]
+
 ]
 
 function getAccountList() {
@@ -178,15 +205,34 @@ function deposit(values) {
         return false;
     }
 }
+function withdraw(values){
+    if(filterAccountBy(values.account, "account").length > 0){
+        const accounts = getAccountList().map(acc =>{
+            if(acc.account.number == values.account){
+                acc.account.balance = parseFloat(acc.account.balance - values.withdraw);
+            }
+            return acc; 
+        });
+        fs.writeFileSync('accounts.json', JSON.stringify(accounts));
+        showSuccessMessage("Saque realizado com sucesso! :D");
+        accounts.forEach(element => {
+            if(element.account.number = values.account){
+                showSuccessMessage(`Seu saldo atual é de: R$ ${element.account.balance - element.account.withdraw}`);
+            }
 
+        })  
+        return true;
+    } else {
+        showWarningMessage("Conta não encontrada! Verifique e tente novamente.");
+        return false;
+    }
+}
 function balance(values) {
     if(filterAccountBy(values.account, "account").length > 0) {
-    
         const accounts = JSON.parse(fs.readFileSync('accounts.json', 'utf8'));
-
         accounts.forEach(element => {
             if (element.account.number == values.account) {
-                showSuccessMessage(`Saldo: R$ ${element.account.balance}`);
+                showSuccessMessage(`Saldo atual: R$ ${element.account.balance}`);
             }
         });
 
@@ -213,11 +259,13 @@ const routes = {
     "Saldo": () => {
         inquirer_(balanceInputs, (answers) => {
             balance(answers);
+            main();
         });
     },
     "Sacar": () => {
         inquirer_(withDrawInputs, (answers) => {
-            console.log(answers);
+            withdraw(answers);
+            main();
         });
     },
     "Sair": () => {
