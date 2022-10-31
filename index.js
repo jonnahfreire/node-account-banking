@@ -97,7 +97,7 @@ const balanceInputs = [
                 showErrorMessage("Insira uma senha numérica de 4 digitos");
             } else if (RegExp(/\D/g).test(value)) {
                 showErrorMessage("Insira apenas números.");
-            } else if (MD5(value).toString() != getAccountList().forEach(acc => acc.password)){
+            } else if (MD5(value).toString() != getAccountList().map(acc => acc.password)){
                 showWarningMessage("Senha incorreta! Verifique e tente novamente.");
             } else return true;
         }
@@ -117,7 +117,7 @@ const withDrawInputs = [
         },
     },
     balanceInputs[1],
-   {
+    {
         message: 'Informe o valor: ',
         name: 'withdraw',
         type: 'input',
