@@ -293,6 +293,7 @@ function inquirer_(choices, _function) {
         if (error.isTtyError) {
             showErrorMessage("Desculpe! Houve um erro ao acessar o console.");
         } else {
+            console.log(error);
             showErrorMessage("Desculpe! Não foi possível validar seus dados.");
         }
     });
@@ -300,7 +301,7 @@ function inquirer_(choices, _function) {
 
 function main() {
     console.clear();
-
+    
     fs.readFile('accounts.json', (err) => {
         if(err?.code === "ENOENT")
             fs.writeFileSync("accounts.json", JSON.stringify([]));
