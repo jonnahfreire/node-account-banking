@@ -176,24 +176,18 @@ function createAccount(values) {
 }
 
 function deposit(values) {
-    if(filterAccountBy(values.accountNumber, "account.number").length > 0) {
-
-        const accounts = getAccountList().map(acc => {
-            if(acc.account.number == values.accountNumber) {
-                acc.account.balance += parseFloat(values.deposit);
-            }
-        
-            return acc;
-        });
+    const accounts = getAccountList().map(acc => {
+        if(acc.account.number == values.accountNumber) {
+            acc.account.balance += parseFloat(values.deposit);
+        }
     
-        fs.writeFileSync('accounts.json', JSON.stringify(accounts));
-        showSuccessMessage("Depósito realizado com sucesso! :D");
+        return acc;
+    });
 
-        return true;
-    } else {
-        showWarningMessage("Conta não encontrada! Verifique e tente novamente.");
-        return false;
-    }
+    fs.writeFileSync('accounts.json', JSON.stringify(accounts));
+    showSuccessMessage("Depósito realizado com sucesso! :D");
+
+    return true;
 }
 
 
