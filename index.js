@@ -57,7 +57,7 @@ const accountInputs = [
         name: "name",
         type: "input",
         validate: (input) => {
-            if (input.length == 0) showErrorMessage("Por favor, informe seu nome completo.");
+            if (!input.length) showErrorMessage("Por favor, informe seu nome completo.");
             else return true;
         },
     },
@@ -66,7 +66,7 @@ const accountInputs = [
         name: "cpf",
         type: "input",
         validate: (input) => {
-            if (!filterAccountBy(input, "cpf").length) 
+            if (filterAccountBy(input, "cpf").length) 
                 showWarningMessage("Este CPF Já está vinculado a uma conta!");
             else return cpfValidation(input); 
         },
@@ -293,7 +293,6 @@ function inquirer_(choices, _function) {
         if (error.isTtyError) {
             showErrorMessage("Desculpe! Houve um erro ao acessar o console.");
         } else {
-            console.log(error);
             showErrorMessage("Desculpe! Não foi possível validar seus dados.");
         }
     });
@@ -301,7 +300,13 @@ function inquirer_(choices, _function) {
 
 function main() {
     console.clear();
-    inquirer_(menuChoices, (answers) => routes[answers.menuChoices]());
+
+    fs.readFile('accounts.json', (err) => {
+        if(err?.code === "ENOENT")
+            fs.writeFileSync("accounts.json", JSON.stringify([]));
+        
+        inquirer_(menuChoices, (answers) => routes[answers.menuChoices]());
+    });
 }
 
 main();
