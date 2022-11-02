@@ -22,9 +22,9 @@ const back = () => {
 };
 
 const cpfValidation = (value) => {
-    if (value.length == 0) showErrorMessage("Por favor, informe um CPF.");
-    else if (RegExp(/\D/g).test(value)) showErrorMessage("Insira apenas números.");
-    else if (value.length < 11 || value.length > 11) showErrorMessage("Digite um CPF válido.");
+    if (value.length == 0) showErrorMessage("Por favor, informe um CPF!");
+    else if (RegExp(/\D/g).test(value)) showErrorMessage("Insira apenas números!");
+    else if (value.length < 11 || value.length > 11) showErrorMessage("Informe um CPF válido!");
     else return true;
 };
 
@@ -37,9 +37,9 @@ const accountValidation = (value) => {
 
 const valueValidation = (value) => {
     if (RegExp(/\D/g).test(value)) 
-        showErrorMessage("Por favor, informe um valor válido.");
+        showErrorMessage("Por favor, informe um valor válido!");
     else if (parseFloat(value) == 0 || !value.length) 
-        showErrorMessage("Por favor, informe um valor positivo.");
+        showErrorMessage("Por favor, informe um valor positivo!");
     else return true;
 }
 
@@ -47,7 +47,7 @@ const passwordValidation = (value) => {
     if(value.length < 4) {
         showErrorMessage("Insira uma senha numérica de 4 digitos");
     } else if (RegExp(/\D/g).test(value)) {
-        showErrorMessage("Insira apenas números.");
+        showErrorMessage("Insira apenas números!");
     } else return true;
 }
 
@@ -57,7 +57,7 @@ const accountInputs = [
         name: "name",
         type: "input",
         validate: (input) => {
-            if (input.length == 0) showErrorMessage("Por favor, informe seu nome completo.");
+            if (!input.length) showErrorMessage("Por favor, informe seu nome completo!");
             else return true;
         },
     },
@@ -66,7 +66,7 @@ const accountInputs = [
         name: "cpf",
         type: "input",
         validate: (input) => {
-            if (!filterAccountBy(input, "cpf").length) 
+            if (filterAccountBy(input, "cpf").length) 
                 showWarningMessage("Este CPF Já está vinculado a uma conta!");
             else return cpfValidation(input); 
         },
@@ -96,7 +96,7 @@ const depositInputs = [
 
 const balanceInputs = [
     {
-        message: "Informe o número da conta que deseja ver o saldo: ",
+        message: "Informe o número da sua conta: ",
         name: "accountNumber",
         type: "input",
         validate: (accountNumber) => {
@@ -120,7 +120,7 @@ const balanceInputs = [
 
 const withDrawInputs = [
     {
-        message: 'Informe o número da conta em que deseja sacar: ',
+        message: 'Informe o número da sua conta: ',
         name: 'accountNumber',
         type: 'input',
         validate: (input) => balanceInputs[0].validate(input),
@@ -150,7 +150,7 @@ function createAccount(values) {
         return `${number}-${digit}`;
     }
 
-    showWarningMessage("Verificando contas...");
+    showWarningMessage("Verificando dados...");
 
     const userAccount = [
         {
