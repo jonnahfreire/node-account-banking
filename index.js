@@ -255,7 +255,7 @@ const routes = {
     "Sair": () => {
         inquirer_([
             {
-                message: "Tem certeza? ",
+                message: "Tem certeza que deseja sair? ",
                 name: "exit",
                 type: "list", 
                 choices: ["Sim", "Não"]
