@@ -5,74 +5,92 @@ import MD5 from "crypto-js/md5.js";
 import fs from 'fs';
 
 
-const showErrorMessage = (message) => console.log(chalk.red(`\n${message}`));
+const showErrorMessage = (message) => console.log(chalk.redBright(`\n${message}`));
 const showWarningMessage = (message) => console.log(chalk.yellowBright(`\n${message}`));
 const showSuccessMessage = (message) => console.log(chalk.greenBright(`\n${message}`));
 
-const cpfValidation = (input) => {
-    if (input.length == 0) showErrorMessage("Por favor, informe um CPF.");
-    else if (RegExp(/\D/g).test(input)) showErrorMessage("Insira apenas números.");
-    else if (input.length < 11 || input.length > 11) showErrorMessage("Digite um CPF válido.");
+const back = () => {
+    inquirer_(
+        [
+            {
+                message: "Pressione enter para voltar ao menu...",
+                name: "back",
+                type: "input"
+            }
+        ], 
+        () => main());
+};
+
+const cpfValidation = (value) => {
+    if (value.length == 0) showErrorMessage("Por favor, informe um CPF.");
+    else if (RegExp(/\D/g).test(value)) showErrorMessage("Insira apenas números.");
+    else if (value.length < 11 || value.length > 11) showErrorMessage("Digite um CPF válido.");
     else return true;
 };
 
-const depositInputs = [
-    {
-        message: "Informe o número da conta em que deseja depositar: ",
-        name: "accountNumber",
-        type: "input",
-        validate: (value) => {
-            if(value.includes("-")) value = value.replace("-", "");
-            if (RegExp(/\D/g).test(value)) {
-                showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
-            } else return true;
-        },
-    },
-    {
-        message: "Informe o valor: ",
-        name: "deposit",
-        type: "input",
-        validate: (input) => {
-            if (input.length == 0) {
-              showErrorMessage("Por favor, informe um valor válido.");
-            }  if (parseFloat(input) < 0) {
-                showErrorMessage("Por favor, informe um valor positivo.");
-            } else return true;
-        },
-    }
-];
+const accountValidation = (value) => {
+    if(value.includes("-")) value = value.replace("-", "");
+    if (RegExp(/\D/g).test(value)) {
+        showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
+    } else return true;
+}
+
+const valueValidation = (value) => {
+    if (RegExp(/\D/g).test(value)) 
+        showErrorMessage("Por favor, informe um valor válido.");
+    else if (parseFloat(value) == 0 || !value.length) 
+        showErrorMessage("Por favor, informe um valor positivo.");
+    else return true;
+}
+
+const passwordValidation = (value) => {
+    if(value.length < 4) {
+        showErrorMessage("Insira uma senha numérica de 4 digitos");
+    } else if (RegExp(/\D/g).test(value)) {
+        showErrorMessage("Insira apenas números.");
+    } else return true;
+}
 
 const accountInputs = [
     {
         message: "Nome: ",
         name: "name",
         type: "input",
-        validate: (values) => {
-            if (values.length == 0) {
-                showErrorMessage("Por favor, informe seu nome completo.");
-                return false;
-            } else {
-                return true;
-            }
+        validate: (input) => {
+            if (input.length == 0) showErrorMessage("Por favor, informe seu nome completo.");
+            else return true;
         },
     },
     {
         message: "CPF: ",
         name: "cpf",
         type: "input",
-        validate: (values) => cpfValidation(values),
+        validate: (input) => {
+            if (!filterAccountBy(input, "cpf").length) 
+                showWarningMessage("Este CPF Já está vinculado a uma conta!");
+            else return cpfValidation(input); 
+        },
     }, 
     {
         message: "Crie uma senha de 4 digitos: ",
         name: "password",
         type: "password",
-        validate: (value) => {
-            if(value.length < 4) {
-                showErrorMessage("Insira uma senha numérica de 4 digitos");
-            } else if (RegExp(/\D/g).test(value)) {
-                showErrorMessage("Insira apenas números.");
-            } else return true;
-        }
+        validate: (input) => passwordValidation(input),
+    }
+];
+
+const depositInputs = [
+    {
+        message: "Informe o número da conta em que deseja depositar: ",
+        name: "accountNumber",
+        type: "input",
+        validate: (input) => balanceInputs[0].validate(input),
+    },
+    {
+        message: "Informe o valor: ",
+        name: "deposit",
+        type: "input",
+        validate: (input) => valueValidation(input),
     }
 ];
 
@@ -81,25 +99,21 @@ const balanceInputs = [
         message: "Informe o número da conta que deseja ver o saldo: ",
         name: "accountNumber",
         type: "input",
-        validate: (value) => {
-            if(value.includes("-")) value = value.replace("-", "");
-            if (RegExp(/\D/g).test(value)) {
-                showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
-            } else return true;
-        },
+        validate: (accountNumber) => {
+            if (!filterAccountBy(accountNumber, "account.number").length) 
+                showWarningMessage("Conta não encontrada! Verifique e tente novamente");
+            else return accountValidation(accountNumber);
+        }
     },
     {
         message: "Informe sua senha de 4 digitos: ",
         name: "password",
         type: "password",
         validate: (value) => {
-            if(value.length < 4) {
-                showErrorMessage("Insira uma senha numérica de 4 digitos");
-            } else if (RegExp(/\D/g).test(value)) {
-                showErrorMessage("Insira apenas números.");
-            } else if (MD5(value).toString() != getAccountList().map(acc => acc.password)){
+            if (!filterAccountBy(MD5(value).toString(), "password").length){
                 showWarningMessage("Senha incorreta! Verifique e tente novamente.");
-            } else return true;
+            } else if(passwordValidation(value)) return true;
+            else return true;
         }
     }
 ]
@@ -109,25 +123,14 @@ const withDrawInputs = [
         message: 'Informe o número da conta em que deseja sacar: ',
         name: 'accountNumber',
         type: 'input',
-        validate: (value) => {
-            if(value.includes("-")) value = value.replace("-", "");
-            if (RegExp(/\D/g).test(value)) {
-                showErrorMessage("Insira apenas valores numéricos com dígito separado por "-"");
-            } else return true;
-        },
+        validate: (input) => balanceInputs[0].validate(input),
     },
     balanceInputs[1],
     {
         message: 'Informe o valor: ',
         name: 'withdraw',
         type: 'input',
-        validate: (input) => {
-            if(input.length == 0){
-                showErrorMessage('Por favor, informe um valor válido.');
-            }  if(parseFloat(input) < 0 ){
-                showErrorMessage("Por favor, informe um valor positivo")
-            }  else return true;
-        }
+        validate: (input) => valueValidation(input),
     },
 ]
 
@@ -148,11 +151,6 @@ function createAccount(values) {
     }
 
     showWarningMessage("Verificando contas...");
-
-    if(filterAccountBy(values.cpf, "cpf").length > 0) {
-        showErrorMessage("Este CPF já está vinculado a uma conta!");
-        return false;
-    }
 
     const userAccount = [
         {
@@ -189,106 +187,75 @@ function deposit(values) {
         });
     
         fs.writeFileSync('accounts.json', JSON.stringify(accounts));
-        showSuccessMessage("Depósito realizado com sucesso! :D\n\n");
+        showSuccessMessage("Depósito realizado com sucesso! :D");
 
         return true;
     } else {
-        showWarningMessage("Conta não encontrada! Verifique e tente novamente.\n\n");
+        showWarningMessage("Conta não encontrada! Verifique e tente novamente.");
         return false;
     }
 }
 
 
 function withdraw(values){
-    let errors = {error: false, message: null}; 
+    let errors = {error: false, message: null};
 
-    if(filterAccountBy(values.accountNumber, "account.number").length > 0) {
-        const accounts = getAccountList().map(acc => {
-            if(MD5(values.password).toString() != acc.password)
-                errors = {error: true, message: "Senha inválida!"};                 
-
-            else if(acc.account.number == values.accountNumber) {
-                if(acc.account.balance >= parseFloat(values.withdraw)) {
-                    acc.account.balance -= parseFloat(values.withdraw);
-                    errors = {error: false, message: null}
-                } else 
-                    errors = {error: true, message: "Saldo insuficiente!"};
-            } 
-            
-            return acc; 
-        });
+    const accounts = getAccountList().map(acc => {
+        if(acc.account.number == values.accountNumber) {
+            if(acc.account.balance >= parseFloat(values.withdraw)) {
+                acc.account.balance -= parseFloat(values.withdraw);
+                errors = {error: false, message: null}
+            } else 
+                errors = {error: true, message: "Saldo insuficiente!"};
+        } 
         
-        if(errors.error) {
-            showErrorMessage(`${errors.message}\n`);
-            return false;
-        } else {
-            fs.writeFileSync('accounts.json', JSON.stringify(accounts));
-            showSuccessMessage("Saque realizado com sucesso! :D");
-    
-            accounts.forEach(acc => {
-                if(acc.account.number = values.accountNumber){
-                    showSuccessMessage(`Seu saldo atual é de: R$ ${acc.account.balance}\n\n`);
-                }
-            });
-            return true;
-        }
-    } else {
-        showWarningMessage("Conta não encontrada! Verifique e tente novamente.\n\n");
+        return acc; 
+    });
+
+    if(errors.error) { 
+        showErrorMessage(`${errors.message}\n`);
         return false;
+    } else {
+        fs.writeFileSync('accounts.json', JSON.stringify(accounts));
+        showSuccessMessage("Saque realizado com sucesso! :D");
+
+        const currentBalance = filterAccountBy(values.accountNumber, "account.number")[0].account.balance;
+        showSuccessMessage(`Seu saldo atual é de: R$ ${currentBalance}`);
+    
+        return true;
     }
 }
 
 
 function balance(values) {
-    let errors = {error: false, message: null}; 
-
-    if(filterAccountBy(values.accountNumber, "account.number").length > 0) {
-        getAccountList().forEach(acc => {
-            if (acc.account.number == values.accountNumber) {
-                if(MD5(values.password).toString() != acc.password)
-                    errors = {error: true, message: "Senha inválida!"};
-                else {
-                    showSuccessMessage(`Saldo atual: R$ ${acc.account.balance.toFixed(2)}`);
-                    errors = {error: false, message: null};
-                }
-            }
-        });
-
-        if(errors.error) { 
-            showErrorMessage(`${errors.message}\n`);
-            return false;
-        }
-        
-        return true;
-    } else {
-        showWarningMessage("Conta não encontrada! Verifique e tente novamente.\n\n");
-        return false;
-    }
+    const currentBalance = filterAccountBy(values.accountNumber, "account.number")[0].account.balance;
+    showSuccessMessage(`Saldo atual: R$ ${currentBalance.toFixed(2)}`);
+    return true;
 }
 
 const routes = {
     "Criar Conta": () => {
         inquirer_(accountInputs, (answers) => {
             createAccount(answers);
-            main();
+            back();
         });
     },
     "Depositar": () => {
         inquirer_(depositInputs, (answers) => {
             deposit(answers);
-            main();
+            back();
         });
     },
     "Saldo": () => {
         inquirer_(balanceInputs, (answers) => {
             balance(answers);
-            main();
+            back();
         });
     },
     "Sacar": () => {
         inquirer_(withDrawInputs, (answers) => {
             withdraw(answers);
-            main();
+            back();
         });
     },
     "Sair": () => {
@@ -339,6 +306,7 @@ function inquirer_(choices, _function) {
 }
 
 function main() {
+    console.clear();
     inquirer_(menuChoices, (answers) => routes[answers.menuChoices]());
 }
 
